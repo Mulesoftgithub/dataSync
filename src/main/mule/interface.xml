@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="interfaceFlow" doc:id="775d914c-7bf3-4760-a0a1-a073e4709901" >
+		<http:listener doc:name="Listener" doc:id="e3f54938-3f08-4215-828b-9adec67f096a" config-ref="HTTP_Listener_config" path="/accounts"/>
+		<flow-ref doc:name="Flow Reference" doc:id="fb9afc42-0943-45ec-876a-13e83094b360" name="addAccountSalesforce"/>
+	</flow>
+	<flow name="interfaceFlow1" doc:id="a748f1eb-8d3a-4004-bd70-adee0787e412" >
+		<http:listener doc:name="Listener" doc:id="639f4ebe-8b44-49fd-8bef-8b899ca0aad7" config-ref="HTTP_Listener_config" path="/accounts" allowedMethods="DELETE"/>
+		<flow-ref doc:name="Flow Reference" doc:id="a8fc230c-3818-476f-95e3-c1f145430e8b" name="deleteAccountSalesforce"/>
+	</flow>
+	<flow name="interfaceFlow2" doc:id="43d18167-db8c-4079-820c-3243c1d6fbd2" >
+		<http:listener doc:name="Listener" doc:id="cb7dc59e-0d31-451f-95de-68a968822499" config-ref="HTTP_Listener_config" allowedMethods="PUT" path="/accounts"/>
+		<flow-ref doc:name="Flow Reference" doc:id="1f4952a3-2fbb-4303-bd1f-46120ab9d15c" name="updateAccountSalesforce"/>
+	</flow>
+</mule>

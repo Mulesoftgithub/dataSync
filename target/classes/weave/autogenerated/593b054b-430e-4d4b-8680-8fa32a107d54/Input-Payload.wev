@@ -1,0 +1,9 @@
+%dw 2.0
+
+type auto_593b054b_430e_4d4b_8680_8fa32a107d54_Input_Payload = {|
+  id: String {"typeId": "externalId__c"} | Null, 
+  "type": "Prospect" | "Customer - Direct" | "Customer - Channel" | "Channel Partner / Reseller" | "Installation Partner" | "Technology Partner" | "Other", 
+  name: String {"typeId": "Name"} | Null, 
+  phone: String {"typeId": "Phone"} | Null
+|}
+

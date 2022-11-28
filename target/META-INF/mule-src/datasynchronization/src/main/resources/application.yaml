@@ -1,0 +1,11 @@
+salesforce:
+  name: msoufi@deloitte.fr
+  password: Salesforce2022
+  token: mybZ0Cre6ZsAZ0i3yrkTIG2b
+
+mySql:
+  host: 'sql7.freesqldatabase.com'
+  port: '3306'
+  name: 'sql7580406'
+  password: 'beeAzi2DwB'
+  database: 'sql7580406'

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<flow name="addAccountSalesforce" doc:id="1e633857-3c3f-4a1f-92be-be709566e3e2" >
+		<choice doc:name="Choice" doc:id="fbd6f25c-cbac-4926-81f6-cb704b78b780" >
+			<when expression='#[attributes.queryParams.env == "salesforce"]'>
+				<ee:transform doc:name="Transform Message" doc:id="9facef07-415b-4ef5-910c-4aa52df6f2da">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+	{
+		Name: payload.name,
+		Type: payload.'type',
+		Phone: payload.phone
+	}
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<salesforce:create doc:name="Create" doc:id="850d967b-20f4-4710-b9d2-6faa11ffbb61" config-ref="Salesforce_Config" type="Account" />
+				<ee:transform doc:name="Transform Message" doc:id="d241bf61-3bcd-416e-bfac-260bac9bb6ae">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<when expression='#[attributes.queryParams.env == "mysql"]'>
+				<flow-ref doc:name="Flow Reference" doc:id="505bb5bc-dc88-4935-8031-cf1e420c7bb7" name="insertAccountMysql"/>
+				<ee:transform doc:name="Transform Message" doc:id="562b0c32-5d0d-4c3f-9dbe-6ab8828a079a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Account was inserted successfully."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+		</choice>
+	</flow>
+	<flow name="deleteAccountSalesforce" doc:id="eb940384-7c54-4695-a71c-116950e39ceb" >
+		<choice doc:name="Choice" doc:id="43de1100-8b2b-4207-ab82-63a7095e5a6c" >
+			<when expression='#[attributes.queryParams.env == "salesforce"]'>
+				<salesforce:query doc:name="Query" doc:id="356fdbe2-3f54-473a-bfad-ca200409f7df" config-ref="Salesforce_Config">
+					<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Account WHERE externalId__c = ':exte']]></salesforce:salesforce-query>
+					<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"exte" : attributes.queryParams.id
+}]]]></salesforce:parameters>
+				</salesforce:query>
+				<salesforce:delete doc:name="Delete" doc:id="120f4b71-7e43-44f5-8351-8dfce856b1ef" config-ref="Salesforce_Config">
+					<salesforce:ids ><![CDATA[#[[payload[0].Id]]]]></salesforce:ids>
+				</salesforce:delete>
+				<ee:transform doc:name="Transform Message" doc:id="7706b887-3039-4412-9845-1362db3ffb5b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Account was deleted successfully."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+		</choice>
+	</flow>
+	<flow name="updateAccountSalesforce" doc:id="667cc05b-275b-4921-a4f8-9c264855608d" >
+		<choice doc:name="Choice" doc:id="2dc462d0-3b82-44e6-9d6b-4a0025310cff" >
+			<when expression='#[attributes.queryParams.env == "salesforce"]'>
+				<set-variable value="#[payload]" doc:name="Set Variable" doc:id="4a96f291-7bc9-4e78-b6bc-c2cf09d7c28e" variableName="accountInfo"/>
+				<salesforce:query doc:name="Query" doc:id="6ce74bf8-5716-4196-8b87-1170660c73f1" config-ref="Salesforce_Config">
+					<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Account WHERE externalId__c = ':exte']]></salesforce:salesforce-query>
+					<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"exte" : attributes.queryParams.id
+}]]]></salesforce:parameters>
+				</salesforce:query>
+				<ee:transform doc:name="Transform Message" doc:id="4b12473a-526a-4b12-9276-b8aea2ea5779">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[
+	{
+		Id: payload[0].Id,
+		Name: vars.accountInfo.name,
+		Type: vars.accountInfo.'type',
+		Phone: vars.accountInfo.phone
+	}
+]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<salesforce:update type="Account" doc:name="Update" doc:id="fc520eaf-6e7c-44c1-b799-5209d32dfe08" config-ref="Salesforce_Config">
+				</salesforce:update>
+				<ee:transform doc:name="Transform Message" doc:id="cf5d5b0a-1e61-4c5e-8034-6e7b37110536" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Account was updated successfully."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+		</choice>
+	</flow>
+	<flow name="insertAccountMysql" doc:id="593b054b-430e-4d4b-8680-8fa32a107d54">
+		<db:insert doc:name="Insert" doc:id="c46b4253-0ad2-4a06-847c-553c1e40d9ca" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into Account (id, name, type, phone) Values (:id, :name, :type, :phone);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+	name: payload.name,
+	'type': payload.'type',
+	phone: payload.phone
+}]]]></db:input-parameters>
+		</db:insert>
+	</flow>
+	<flow name="updateAccountMysql" doc:id="53f769d0-a3cc-4ee4-a6c7-e9895fbbe8f6" >
+		<db:update doc:name="Update" doc:id="c3399fe4-effa-4d0c-89d8-8560ce264f92" config-ref="Database_Config">
+			<db:sql ><![CDATA[update Account set name= :name, phone= :phone, type= :type where id = :id; ]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+	name: payload.name,
+	'type': payload.'type',
+	phone: payload.phone
+}]]]></db:input-parameters>
+		</db:update>
+	</flow>
+	<flow name="deleteAccountMysql" doc:id="a84f64ab-ca55-4712-8742-7f1814cc4c1d" >
+		<db:delete doc:name="Delete" doc:id="ab712a0f-9cd6-47aa-9492-9b4904b6b685" >
+			<db:sql ><![CDATA[DELETE FROM Account WHERE id = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+}]]]></db:input-parameters>
+		</db:delete>
+	</flow>
+	<flow name="TriggerSalesforceInsert" doc:id="6263a21a-0edf-4d4b-84d5-52e33bc8ca09" >
+		<salesforce:new-object-listener objectType="Account" doc:name="On New Object" doc:id="b89e7a1e-ee9a-41c2-be28-e77e324af51b" config-ref="Salesforce_Config">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</salesforce:new-object-listener>
+		<ee:transform doc:name="Transform Message" doc:id="fd2d7143-3aba-4dbf-97d2-94611c6923d3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'id': payload.externalId__c,
+	'type': payload.'Type',
+	'name': payload.Name,
+	'phone': payload.Phone
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="b1e4fa87-12b0-4c3b-afad-91a32f76c1c4" name="insertAccountMysql"/>
+	</flow>
+	<flow name="TriggerSalesforceUpdate" doc:id="ce8d6b5f-827c-4d9c-858f-10860cd4fd4c" >
+		<salesforce:modified-object-listener doc:name="On Modified Object" doc:id="3ed3af54-0f4c-48d8-8d86-1282bcb815a7" config-ref="Salesforce_Config" objectType="Account">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</salesforce:modified-object-listener>
+		<ee:transform doc:name="Transform Message" doc:id="c93f9a03-eb0c-4931-a39a-bddf2e60fac5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'id': payload.externalId__c,
+	'type': payload.'Type',
+	'name': payload.Name,
+	'phone': payload.Phone
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="b5b3c749-fd76-44a1-b3d6-a1dc4fbf419f" name="updateAccountMysql"/>
+	</flow>
+	<flow name="TriggerSalesforceDelete" doc:id="26c54c74-3e5d-4b6e-8611-88bd92b7c659" >
+		<salesforce:deleted-object-listener doc:name="On Deleted Object" doc:id="0c4c7e44-6e56-4daa-9def-55b10a0774c6" config-ref="Salesforce_Config" objectType="Account">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</salesforce:deleted-object-listener>
+		<ee:transform doc:name="Transform Message" doc:id="119a0171-4717-4d66-9435-915621658405" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'id': payload.externalId__c
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="3171bee7-37a0-44d2-acef-aeccfc8ab09d" name="deleteAccountMysql"/>
+	</flow>
+</mule>
